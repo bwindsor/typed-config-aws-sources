@@ -4,4 +4,4 @@ venv
 .coverage 
 build 
 dist 
-typed_config.egg-info 
+typed_config_aws_sources.egg-info

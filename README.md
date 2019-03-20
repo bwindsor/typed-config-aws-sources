@@ -93,11 +93,11 @@ To run with coverage:
 ### Deploying to PyPI
 You'll need to `pip install twine` if you don't have it.
 
-1. Bump version number in `typedconfig/awssource/__version__.py`
+1. Bump version number in `typedconfig_awssource/__version__.py`
 2. `python setup.py sdist bdist_wheel`
 3. `twine check dist/*`
 4. Upload to the test PyPI `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
-5. Check all looks ok at [https://test.pypi.org/project/typed-config](https://test.pypi.org/project/typed-config)
+5. Check all looks ok at [https://test.pypi.org/project/typed-config-aws-sources](https://test.pypi.org/project/typed-config-aws-sources)
 6. Upload to live PyPI `twine upload dist/*`
 
 Here is [a good tutorial](https://realpython.com/pypi-publish-python-package) on publishing packages to PyPI.

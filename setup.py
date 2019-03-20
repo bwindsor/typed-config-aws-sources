@@ -30,6 +30,6 @@ setup(
     include_package_data=True,
     install_requires=[
         'boto3',
-        'typedconfig'],
+        'typed-config'],
     entry_points={}
 )

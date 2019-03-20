@@ -1,0 +1,7 @@
+.idea 
+__pycache__ 
+venv 
+.coverage 
+build 
+dist 
+typed_config.egg-info 

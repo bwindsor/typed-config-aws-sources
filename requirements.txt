@@ -1,0 +1,7 @@
+boto3
+typed-config
+
+pytest
+pytest-cov
+moto
+codecov

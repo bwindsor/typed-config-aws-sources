@@ -4,7 +4,7 @@ Module containing AWS dependent configuration sources
 import boto3
 import json
 from botocore.exceptions import ClientError, NoCredentialsError
-from typing import Optional
+from typing import Optional, Dict
 from typedconfig.config import ConfigSource
 from typedconfig.source import AbstractIniConfigSource
 from configparser import ConfigParser
@@ -79,5 +79,9 @@ class SecretsManagerConfigSource(ConfigSource):
         except self._client.exceptions.ResourceNotFoundException:
             return None
 
-        section_contents = json.loads(response['SecretString'])
-        return section_contents.get(key_name, None)
+        section_contents: Dict[str, str] = json.loads(response['SecretString'])
+
+        # Make all keys lowercase
+        section_contents = {k.lower(): v for k, v in section_contents.items()}
+
+        return section_contents.get(key_name.lower(), None)

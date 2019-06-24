@@ -86,10 +86,11 @@ This reads secret values from secrets manager. Permission to read AWS secrets is
 Create the `SecretsManagerConfigSource` like this:
 ```python
 from typedconfig_awssource import SecretsManagerConfigSource
-source = SecretsManagerConfigSource('myproject')
+source = SecretsManagerConfigSource('myproject', must_exist=False)
 ```
 
 * The argument passed in the prefix which is placed before the `/` in the secret name. So when I try to get the database password, the secret `myproject/database` is retrieved, the JSON is parsed and value the field `password` is returned.  
+* The `must_exist` argument specifies whether to error if AWS secretsmanager cannot be accessed. Default is `False`.
 
 ## Contributing
 Ideas for new features and pull requests are welcome. PRs must come with tests included. This was developed using Python 3.7 but Travis tests run with v3.6 too.

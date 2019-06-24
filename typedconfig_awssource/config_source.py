@@ -59,17 +59,23 @@ class IniS3ConfigSource(AbstractIniConfigSource):
 
 
 class SecretsManagerConfigSource(ConfigSource):
-    def __init__(self, secret_name_prefix: str):
+    def __init__(self, secret_name_prefix: str, must_exist: bool=False):
         assert type(secret_name_prefix) is str
         assert len(secret_name_prefix) > 0
         # Create a Secrets Manager client
         self._client = boto3.client('secretsmanager')
         self._secret_name_prefix = secret_name_prefix
+        self._must_exist = must_exist
 
     def get_config_value(self, section_name: str, key_name: str) -> Optional[str]:
         secret_name = self._secret_name_prefix + "/" + section_name
         try:
             response = self._client.get_secret_value(SecretId=secret_name)
+        except (NoCredentialsError, ClientError):
+            if self._must_exist:
+                raise
+            else:
+                return None
         except self._client.exceptions.ResourceNotFoundException:
             return None
 

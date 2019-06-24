@@ -74,6 +74,23 @@ source = DynamoDbConfigSource('table_name',
 * The other three arguments are optional, and are supplying the attribute (or "column") names in the table which store the three things defining a config parameter (section, key, and value)
 * Default attribute names are `"section"`, `"key"`, and `"value"`
 
+#### `SecretsManagerConfigSource`
+This reads secret values from secrets manager. Permission to read AWS secrets is required. One secrets should be stored for each config section with the name format `prefix/section`, and contain json key-value pairs. For example, for a project called `myproject` there may be a secret called `myproject/database` containing the following value. Note that even numeric values should be stored as strings.
+```json
+{
+    "user": "secretuser",
+    "password": "secretpassword"
+}
+```
+
+Create the `SecretsManagerConfigSource` like this:
+```python
+from typedconfig_awssource import SecretsManagerConfigSource
+source = SecretsManagerConfigSource('myproject')
+```
+
+* The argument passed in the prefix which is placed before the `/` in the secret name. So when I try to get the database password, the secret `myproject/database` is retrieved, the JSON is parsed and value the field `password` is returned.  
+
 ## Contributing
 Ideas for new features and pull requests are welcome. PRs must come with tests included. This was developed using Python 3.7 but Travis tests run with v3.6 too.
 

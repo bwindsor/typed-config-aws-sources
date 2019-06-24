@@ -1,8 +1,8 @@
-from typedconfig_awssource import IniS3ConfigSource, DynamoDbConfigSource
+from typedconfig_awssource import IniS3ConfigSource, DynamoDbConfigSource, SecretsManagerConfigSource
 import os
 import boto3
 import botocore.exceptions
-from moto import mock_s3, mock_dynamodb2
+from moto import mock_s3, mock_dynamodb2, mock_secretsmanager
 from unittest.mock import patch
 import pytest
 from typedconfig.source import ConfigSource
@@ -26,6 +26,19 @@ def do_assertions(source: ConfigSource):
 
     v = source.get_config_value('s', 'c')
     assert v is None
+
+
+@mock_secretsmanager
+@aws_cred_patch
+def test_secrets_manager_config_source():
+    client = boto3.client('secretsmanager')
+    client.create_secret(
+        Name='project/s',
+        SecretString='{"a": "1"}'
+    )
+
+    source = SecretsManagerConfigSource(secret_name_prefix='project')
+    do_assertions(source)
 
 
 @mock_s3

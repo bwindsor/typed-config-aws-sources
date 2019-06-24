@@ -111,10 +111,11 @@ To run with coverage:
 You'll need to `pip install twine` if you don't have it.
 
 1. Bump version number in `typedconfig_awssource/__version__.py`
-2. `python setup.py sdist bdist_wheel`
-3. `twine check dist/*`
-4. Upload to the test PyPI `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
-5. Check all looks ok at [https://test.pypi.org/project/typed-config-aws-sources](https://test.pypi.org/project/typed-config-aws-sources)
-6. Upload to live PyPI `twine upload dist/*`
+2. Tag the release in git `git tag -a v0.1.0 -m "Message"`
+3. `python setup.py sdist bdist_wheel`
+4. `twine check dist/*`
+5. Upload to the test PyPI `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`
+6. Check all looks ok at [https://test.pypi.org/project/typed-config-aws-sources](https://test.pypi.org/project/typed-config-aws-sources)
+7. Upload to live PyPI `twine upload dist/*`
 
 Here is [a good tutorial](https://realpython.com/pypi-publish-python-package) on publishing packages to PyPI.

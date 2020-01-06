@@ -89,8 +89,24 @@ from typedconfig_awssource import SecretsManagerConfigSource
 source = SecretsManagerConfigSource('myproject', must_exist=False)
 ```
 
-* The argument passed in the prefix which is placed before the `/` in the secret name. So when I try to get the database password, the secret `myproject/database` is retrieved, the JSON is parsed and value the field `password` is returned.  
-* The `must_exist` argument specifies whether to error if AWS secretsmanager cannot be accessed. Default is `False`.
+* The first argument passed is the prefix which is placed before the `/` in the secret name. So when I try to get the database password, the secret `myproject/database` is retrieved, the JSON is parsed and value the field `password` is returned.  
+* The `must_exist` argument specifies whether to error if AWS secretsmanager cannot be accessed, or if the key does not exist. Default is `False`.
+
+#### `ParameterStoreConfigSource`
+This reads (optionally secret) values from AWS SSM parameter store. Storing secrets here is cheaper than using secrets manager. Permission to read from SSM parameter store is required. Each config parameter should be stored in parameter store as an individual `SecureString` parameter. For example, I would store the database password in a key called
+```
+myproject/database/password
+```
+where `database` is the section name and `password` is the configuration key name.
+
+Create a `ParameterStoreConfigSource` like this:
+```python
+from typedconfig_awssource import ParameterStoreConfigSource
+source = ParameterStoreConfigSource('myproject', must_exist=False)
+```
+
+* The first argument passed is the prefix at the start of the SSM parameter name, before the first `/`.
+* The `must_exist` argument specifies whether to error if AWS parameter store cannot be accessed, or if the requested key does not exist.
 
 ## Contributing
 Ideas for new features and pull requests are welcome. PRs must come with tests included. This was developed using Python 3.7 but Travis tests run with v3.6 too.

@@ -1,1 +1,1 @@
-from .config_source import IniS3ConfigSource, DynamoDbConfigSource, SecretsManagerConfigSource
+from .config_source import IniS3ConfigSource, DynamoDbConfigSource, SecretsManagerConfigSource, ParameterStoreConfigSource

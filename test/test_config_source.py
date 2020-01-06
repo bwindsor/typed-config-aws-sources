@@ -1,8 +1,8 @@
-from typedconfig_awssource import IniS3ConfigSource, DynamoDbConfigSource, SecretsManagerConfigSource
+from typedconfig_awssource import IniS3ConfigSource, DynamoDbConfigSource, SecretsManagerConfigSource, ParameterStoreConfigSource
 import os
 import boto3
 import botocore.exceptions
-from moto import mock_s3, mock_dynamodb2, mock_secretsmanager
+from moto import mock_s3, mock_dynamodb2, mock_secretsmanager, mock_ssm
 from unittest.mock import patch
 import pytest
 from typedconfig.source import ConfigSource
@@ -17,28 +17,62 @@ aws_cred_patch = patch.dict(os.environ, {
 })
 
 
-def do_assertions(source: ConfigSource):
+def do_assertions(source: ConfigSource, must_exist=False):
     v = source.get_config_value('s', 'a')
     assert '1' == v
 
-    v = source.get_config_value('t', 'a')
-    assert v is None
+    if must_exist:
+        with pytest.raises(Exception):
+            source.get_config_value('t', 'a')
+    else:
+        v = source.get_config_value('t', 'a')
+        assert v is None
 
-    v = source.get_config_value('s', 'c')
-    assert v is None
+    if must_exist:
+        with pytest.raises(Exception):
+            source.get_config_value('s', 'c')
+    else:
+        source.get_config_value('s', 'c')
+        assert v is None
 
 
+@pytest.mark.parametrize("param_type", (
+    "String",
+    "SecureString"
+))
+@pytest.mark.parametrize("must_exist", (
+    True,
+    False
+))
+@mock_ssm
+@aws_cred_patch
+def test_parameter_store_config_source(param_type, must_exist):
+    client = boto3.client('ssm')
+    client.put_parameter(
+        Name='project/s/a',
+        Value="1",
+        Type=param_type
+    )
+
+    source = ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=must_exist)
+    do_assertions(source, must_exist)
+
+
+@pytest.mark.parametrize("must_exist", (
+    True,
+    False
+))
 @mock_secretsmanager
 @aws_cred_patch
-def test_secrets_manager_config_source():
+def test_secrets_manager_config_source(must_exist):
     client = boto3.client('secretsmanager')
     client.create_secret(
         Name='project/s',
         SecretString='{"a": "1"}'
     )
 
-    source = SecretsManagerConfigSource(secret_name_prefix='project')
-    do_assertions(source)
+    source = SecretsManagerConfigSource(secret_name_prefix='project', must_exist=must_exist)
+    do_assertions(source, must_exist)
 
 
 @mock_s3

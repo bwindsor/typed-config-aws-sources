@@ -84,4 +84,35 @@ class SecretsManagerConfigSource(ConfigSource):
         # Make all keys lowercase
         section_contents = {k.lower(): v for k, v in section_contents.items()}
 
-        return section_contents.get(key_name.lower(), None)
+        value = section_contents.get(key_name.lower(), None)
+        if value is None and self._must_exist:
+            raise KeyError("Config section {0} was found but key {1} was not found within it.".format(section_name, key_name))
+
+        return value
+
+
+class ParameterStoreConfigSource(ConfigSource):
+    def __init__(self, parameter_name_prefix: str, must_exist: bool=False):
+        assert type(parameter_name_prefix) is str
+        assert len(parameter_name_prefix) > 0
+        # Create a Secrets Manager client
+        self._client = boto3.client('ssm')
+        self._parameter_name_prefix = parameter_name_prefix
+        self._must_exist = must_exist
+
+    def get_config_value(self, section_name: str, key_name: str) -> Optional[str]:
+        parameter_name = self._parameter_name_prefix + "/" + section_name + "/" + key_name.lower()
+        try:
+            response = self._client.get_parameter(
+                Name=parameter_name,
+                WithDecryption=True
+            )
+        except (NoCredentialsError, ClientError):
+            if self._must_exist:
+                raise
+            else:
+                return None
+        except self._client.exceptions.ResourceNotFoundException:
+            return None
+
+        return response['Parameter']['Value']

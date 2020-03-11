@@ -36,17 +36,44 @@ def do_assertions(source: ConfigSource, must_exist=False):
         assert v is None
 
 
+def do_assertions_with_limited_keys(source: ConfigSource, must_exist, only_these_keys):
+    if only_these_keys is not None:
+        v = source.get_config_value('s', 'a')
+        if ('s', 'a') in only_these_keys:
+            assert v == '1'
+        else:
+            assert v is None
+        if ('s', 'b') in only_these_keys:
+            if must_exist:
+                with pytest.raises(Exception):
+                    source.get_config_value('s', 'b')
+            else:
+                v = source.get_config_value('s', 'b')
+                assert v is None
+        else:
+            v = source.get_config_value('s', 'b')
+            assert v is None
+    else:
+        do_assertions(source, must_exist)
+
+
 @pytest.mark.parametrize("param_type", (
     "String",
     "SecureString"
 ))
-@pytest.mark.parametrize("must_exist", (
-    True,
-    False
+@pytest.mark.parametrize("must_exist,only_these_keys", (
+    (True, None),
+    (False, None),
+    (True, {'s', 'a'}),
+    (True, {'s', 'b'}),
+    (True, set()),
+    (False, {'s', 'a'}),
+    (False, {'s', 'b'}),
+    (False, set()),
 ))
 @mock_ssm
 @aws_cred_patch
-def test_parameter_store_config_source(param_type, must_exist):
+def test_parameter_store_config_source(param_type, must_exist, only_these_keys):
     client = boto3.client('ssm')
     client.put_parameter(
         Name='project/s/a',
@@ -54,25 +81,34 @@ def test_parameter_store_config_source(param_type, must_exist):
         Type=param_type
     )
 
-    source = ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=must_exist)
-    do_assertions(source, must_exist)
+    source = ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=must_exist,
+                                        only_these_keys=only_these_keys)
+
+    do_assertions_with_limited_keys(source, must_exist, only_these_keys)
 
 
-@pytest.mark.parametrize("must_exist", (
-    True,
-    False
+@pytest.mark.parametrize("must_exist,only_these_keys", (
+    (True, None),
+    (False, None),
+    (True, {'s', 'a'}),
+    (True, {'s', 'b'}),
+    (True, set()),
+    (False, {'s', 'a'}),
+    (False, {'s', 'b'}),
+    (False, set()),
 ))
 @mock_secretsmanager
 @aws_cred_patch
-def test_secrets_manager_config_source(must_exist):
+def test_secrets_manager_config_source(must_exist, only_these_keys):
     client = boto3.client('secretsmanager')
     client.create_secret(
         Name='project/s',
         SecretString='{"a": "1"}'
     )
 
-    source = SecretsManagerConfigSource(secret_name_prefix='project', must_exist=must_exist)
-    do_assertions(source, must_exist)
+    source = SecretsManagerConfigSource(secret_name_prefix='project', must_exist=must_exist, only_these_keys=only_these_keys)
+
+    do_assertions_with_limited_keys(source, must_exist, only_these_keys)
 
 
 @mock_s3

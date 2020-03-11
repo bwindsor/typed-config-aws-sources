@@ -18,6 +18,8 @@ aws_cred_patch = patch.dict(os.environ, {
 
 
 def do_assertions(source: ConfigSource, must_exist=False):
+    assert source.get_config_value('S', 'A') == source.get_config_value('s', 'a')
+
     v = source.get_config_value('s', 'a')
     assert '1' == v
 
@@ -37,6 +39,8 @@ def do_assertions(source: ConfigSource, must_exist=False):
 
 
 def do_assertions_with_limited_keys(source: ConfigSource, must_exist, only_these_keys):
+    assert source.get_config_value('S', 'A') == source.get_config_value('s', 'a')
+
     if only_these_keys is not None:
         v = source.get_config_value('s', 'a')
         if ('s', 'a') in only_these_keys:
@@ -64,11 +68,11 @@ def do_assertions_with_limited_keys(source: ConfigSource, must_exist, only_these
 @pytest.mark.parametrize("must_exist,only_these_keys", (
     (True, None),
     (False, None),
-    (True, {'s', 'a'}),
-    (True, {'s', 'b'}),
+    (True, {('s', 'a')}),
+    (True, {('s', 'b')}),
     (True, set()),
-    (False, {'s', 'a'}),
-    (False, {'s', 'b'}),
+    (False, {('s', 'a')}),
+    (False, {('s', 'b')}),
     (False, set()),
 ))
 @mock_ssm
@@ -90,11 +94,11 @@ def test_parameter_store_config_source(param_type, must_exist, only_these_keys):
 @pytest.mark.parametrize("must_exist,only_these_keys", (
     (True, None),
     (False, None),
-    (True, {'s', 'a'}),
-    (True, {'s', 'b'}),
+    (True, {('s', 'a')}),
+    (True, {('s', 'b')}),
     (True, set()),
-    (False, {'s', 'a'}),
-    (False, {'s', 'b'}),
+    (False, {('s', 'a')}),
+    (False, {('s', 'b')}),
     (False, set()),
 ))
 @mock_secretsmanager
@@ -120,7 +124,6 @@ def test_ini_s3_config_source():
 [s]
 a = 1
 """)
-
     source = IniS3ConfigSource('test-bucket', 'test-key')
     do_assertions(source)
 

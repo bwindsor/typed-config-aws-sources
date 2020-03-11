@@ -26,10 +26,10 @@ class DynamoDbConfigSource(ConfigSource):
             TableName=self.table_name,
             Key={
                 self.section_attribute_name: {
-                    'S': section_name
+                    'S': section_name.lower()
                 },
                 self.key_attribute_name: {
-                    'S': key_name
+                    'S': key_name.lower()
                 }
             }
         )
@@ -57,6 +57,9 @@ class IniS3ConfigSource(AbstractIniConfigSource):
                 raise
         super().__init__(config)
 
+    def get_config_value(self, section_name: str, key_name: str) -> Optional[str]:
+        return super().get_config_value(section_name.lower(), key_name.lower())
+
 
 class SecretsManagerConfigSource(ConfigSource):
     def __init__(self, secret_name_prefix: str, must_exist: bool=False,
@@ -67,14 +70,14 @@ class SecretsManagerConfigSource(ConfigSource):
         self._client = boto3.client('secretsmanager')
         self._secret_name_prefix = secret_name_prefix
         self._must_exist = must_exist
-        self._only_these_keys = only_these_keys
+        self._only_these_keys = {(s.lower(), k.lower()) for s, k in only_these_keys} if only_these_keys is not None else None
 
     def get_config_value(self, section_name: str, key_name: str) -> Optional[str]:
         if self._only_these_keys is not None:
-            if (section_name, key_name) not in self._only_these_keys:
+            if (section_name.lower(), key_name.lower()) not in self._only_these_keys:
                 return None
 
-        secret_name = self._secret_name_prefix + "/" + section_name
+        secret_name = self._secret_name_prefix + "/" + section_name.lower()
         try:
             response = self._client.get_secret_value(SecretId=secret_name)
         except (NoCredentialsError, ClientError):
@@ -106,14 +109,14 @@ class ParameterStoreConfigSource(ConfigSource):
         self._client = boto3.client('ssm')
         self._parameter_name_prefix = parameter_name_prefix
         self._must_exist = must_exist
-        self._only_these_keys = only_these_keys
+        self._only_these_keys = {(s.lower(), k.lower()) for s, k in only_these_keys} if only_these_keys is not None else None
 
     def get_config_value(self, section_name: str, key_name: str) -> Optional[str]:
         if self._only_these_keys is not None:
-            if (section_name, key_name) not in self._only_these_keys:
+            if (section_name.lower(), key_name.lower()) not in self._only_these_keys:
                 return None
 
-        parameter_name = self._parameter_name_prefix + "/" + section_name + "/" + key_name.lower()
+        parameter_name = self._parameter_name_prefix + "/" + section_name.lower() + "/" + key_name.lower()
         try:
             response = self._client.get_parameter(
                 Name=parameter_name,

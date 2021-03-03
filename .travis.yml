@@ -1,14 +1,23 @@
 dist: xenial
 language: python
 python:
-  - "3.6"
-  - "3.7"
-# command to install dependencies
+- '3.6'
+- '3.7'
+- '3.8'
+- '3.9'
 install:
-  - pip install -r requirements.txt
-# command to run tests
+- pip install -r requirements.txt
 script:
-  - export BOTO_CONFIG=/dev/null
-  - pip freeze
-  - pytest --cov
-  - codecov
+- export BOTO_CONFIG=/dev/null
+- pip freeze
+- pytest --cov
+- codecov
+deploy:
+  provider: pypi
+  username: __token__
+  password:
+    secure: PEvLA6gvrSKs60oUpYcXNUX4G7wj6gsX9cUWypsZQFW/MEPXPHdvCFT/V5s2PP14jfvrpLsT3441owEW1wFDMUJyOjejcWDwfVrOOibPOgR9dtz5iACbWl3lMGswaFaRKJdkKVxehPdbspSFg4BMbXRSZhv3EpwCrhsfGi22A8qWCumS2rYXtQQeB+y5qsB+99cnG7CQVVunSR1rUWK9xVedEufmvVUkD4lKGXVTYVM86Wh0RjJWUZuxdfBo/L0JVoGpwb7pQLnrUNQCIJXOyMPz1oj8So956ZL2cYbbSagwiL+CPaytuQi6DLHkst0Pl98Kg90Rd5WQ89xT8/ONiQqdAKUOoKqHFCBMdkOWfR169ULEMmlYkk0xT9ONivuyZKb2Kp+GDA9a1GFa6D3LgjS55W7GhIxS4sMW4bVOi6sFzSCBkkGti4vnzJz0Kwek1hd5DqNJRcR0wKaJDxA189/OzKs4qQFSPHUVANe5Gw6zfRIsfv8ny+UMYVq4crAaH2dismzmuKQyy/CvlCFsr6iaQbgrePaJCZK1oUUcDXWw8VzOaFjoWoBfQmwDymRn3nPDHqBpgaLWAq7fJkmKjnjLkkI9tUJ0jz2Fv3df/iIq/vMadAz7uCZpXAJadjOtqc7z1jd6AbFMvZ+TQXY1tVLhVmfc3QhWkKPWDOQH5D0=
+  distributions: sdist bdist_wheel
+  skip_existing: true
+  on:
+    tags: true

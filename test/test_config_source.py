@@ -65,19 +65,28 @@ def do_assertions_with_limited_keys(source: ConfigSource, must_exist, only_these
     "String",
     "SecureString"
 ))
-@pytest.mark.parametrize("must_exist,only_these_keys", (
-    (True, None),
-    (False, None),
-    (True, {('s', 'a')}),
-    (True, {('s', 'b')}),
-    (True, set()),
-    (False, {('s', 'a')}),
-    (False, {('s', 'b')}),
-    (False, set()),
+@pytest.mark.parametrize("must_exist, only_these_keys, batch_preload, expected_s_a, expected_s_b, expect_constructor_exception", (
+    (True, None, False, "1", Exception, False),
+    (False, None, False, "1", None, False),
+    (True, {('s', 'a')}, False, "1", None, False),
+    (True, {('s', 'b')}, False, None, Exception, False),
+    (True, set(), False, None, None, False),
+    (False, {('s', 'a')}, False, "1", None, False),
+    (False, {('s', 'b')}, False, None, None, False),
+    (False, set(), False, None, None, False),
+    (True, None, True, "1", Exception, False),
+    (False, None, True, "1", None, False),
+    (True, {('s', 'a')}, True, "1", None, False),
+    (True, {('s', 'b')}, True, None, Exception, True),
+    (True, set(), True, None, None, False),
+    (False, {('s', 'a')}, True, "1", None, False),
+    (False, {('s', 'b')}, True, None, None, False),
+    (False, set(), True, None, None, False),
 ))
 @mock_ssm
 @aws_cred_patch
-def test_parameter_store_config_source(param_type, must_exist, only_these_keys):
+def test_parameter_store_config_source(param_type, must_exist, only_these_keys, batch_preload: bool,
+                                       expected_s_a, expected_s_b, expect_constructor_exception):
     client = boto3.client('ssm')
     client.put_parameter(
         Name='project/s/a',
@@ -85,10 +94,39 @@ def test_parameter_store_config_source(param_type, must_exist, only_these_keys):
         Type=param_type
     )
 
-    source = ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=must_exist,
-                                        only_these_keys=only_these_keys)
+    if expect_constructor_exception:
+        with pytest.raises(Exception):
+            ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=must_exist,
+                                       only_these_keys=only_these_keys, batch_preload=batch_preload)
+    else:
+        source = ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=must_exist,
+                                            only_these_keys=only_these_keys, batch_preload=batch_preload)
+        assert source.get_config_value('S', 'A') == source.get_config_value('s', 'a')
 
-    do_assertions_with_limited_keys(source, must_exist, only_these_keys)
+        assert source.get_config_value('s', 'a') == expected_s_a
+        if expected_s_b is Exception:
+            with pytest.raises(Exception):
+                source.get_config_value('s', 'b')
+        else:
+            assert source.get_config_value('s', 'b') == expected_s_b
+
+        if only_these_keys is None:
+            do_assertions(source, must_exist)
+
+
+@mock_ssm
+@aws_cred_patch
+def test_parameter_store_config_source_preload():
+    client = boto3.client('ssm')
+    client.put_parameter(
+        Name='project/s/a',
+        Value="1",
+        Type="String",
+    )
+
+    source = ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=True,
+                                        only_these_keys={('s', 'a')}, batch_preload=True)
+    assert source._preload == {'project/s/a': '1'}
 
 
 @pytest.mark.parametrize("must_exist,only_these_keys", (

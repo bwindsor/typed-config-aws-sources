@@ -116,17 +116,21 @@ class ParameterStoreConfigSource(ConfigSource):
 
         self._preload = dict()
         if self._only_these_keys is not None and len(self._only_these_keys) > 0 and batch_preload is True:
-            paginator = self._client.get_paginator('get_parameters_by_path')
-            response_iterator = paginator.paginate(
-                Path=self._parameter_name_prefix,
-                Recursive=True,
-                WithDecryption=True,
-            )
-            response = response_iterator.build_full_result()
-            self._preload = {
-                parameter['Name']: parameter['Value']
-                for parameter in response['Parameters']
-            }
+            try:
+                paginator = self._client.get_paginator('get_parameters_by_path')
+                response_iterator = paginator.paginate(
+                    Path=self._parameter_name_prefix,
+                    Recursive=True,
+                    WithDecryption=True,
+                )
+                response = response_iterator.build_full_result()
+                self._preload = {
+                    parameter['Name']: parameter['Value']
+                    for parameter in response['Parameters']
+                }
+            except (NoCredentialsError, ClientError):
+                if self._must_exist:
+                    raise
             if self._must_exist:
                 for section_name, key_name in self._only_these_keys:
                     parameter_name = self._make_parameter_name(section_name, key_name)

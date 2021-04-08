@@ -116,19 +116,22 @@ class ParameterStoreConfigSource(ConfigSource):
 
         self._preload = dict()
         if self._only_these_keys is not None and len(self._only_these_keys) > 0 and batch_preload is True:
-            response = self._client.get_parameters(
-                Names=[
-                    self._make_parameter_name(section_name, key_name)
-                    for section_name, key_name in self._only_these_keys
-                ],
+            paginator = self._client.get_paginator('get_parameters_by_path')
+            response_iterator = paginator.paginate(
+                Path=self._parameter_name_prefix,
+                Recursive=True,
                 WithDecryption=True,
             )
-            if len(response['InvalidParameters']) > 0 and self._must_exist:
-                raise KeyError("Could not find parameters: " + ", ".join(response['InvalidParameters']))
+            response = response_iterator.build_full_result()
             self._preload = {
                 parameter['Name']: parameter['Value']
                 for parameter in response['Parameters']
             }
+            if self._must_exist:
+                for section_name, key_name in self._only_these_keys:
+                    parameter_name = self._make_parameter_name(section_name, key_name)
+                    if parameter_name not in self._preload:
+                        raise KeyError("Could not find parameter: " + parameter_name)
 
     def _make_parameter_name(self, section_name: str, key_name: str):
         return self._parameter_name_prefix + "/" + section_name.lower() + "/" + key_name.lower()

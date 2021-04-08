@@ -129,6 +129,22 @@ def test_parameter_store_config_source_preload():
     assert source._preload == {'project/s/a': '1'}
 
 
+@mock_ssm
+@aws_cred_patch
+def test_parameter_store_config_source_preload_many():
+    client = boto3.client('ssm')
+    for i in range(20):
+        client.put_parameter(
+            Name=f'project/s/a{i}',
+            Value="1",
+            Type="String",
+        )
+
+    source = ParameterStoreConfigSource(parameter_name_prefix='project', must_exist=True,
+                                        only_these_keys={('s', f'a{i}') for i in range(20)}, batch_preload=True)
+    assert source._preload == {f'project/s/a{i}': '1' for i in range(20)}
+
+
 @pytest.mark.parametrize("must_exist,only_these_keys", (
     (True, None),
     (False, None),

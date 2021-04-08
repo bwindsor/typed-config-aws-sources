@@ -103,12 +103,16 @@ where `database` is the section name and `password` is the configuration key nam
 Create a `ParameterStoreConfigSource` like this:
 ```python
 from typedconfig_awssource import ParameterStoreConfigSource
-source = ParameterStoreConfigSource('myproject', must_exist=False, only_these_keys={('s', 'a'), ('s', 'b')})
+source = ParameterStoreConfigSource('myproject',
+                                    must_exist=False,
+                                    only_these_keys={('s', 'a'), ('s', 'b')},
+                                    batch_preload=False)
 ```
 
 * The first argument passed is the prefix at the start of the SSM parameter name, before the first `/`.
 * The `must_exist` argument specifies whether to error if AWS parameter store cannot be accessed, or if the requested key does not exist.
 * The `only_these_keys` argument specifies a limited set of configuration keys. They are provided as `(section, key)` tuples. If provided, the config source will only act when these parameters are requested. This prevents unnecessary AWS API calls, which slow down configuration setup, for config values which you know are not available from parameter store. Setting `only_these_keys=None` (the default) will check parameter store for all config keys.
+* The `batch_preload` argument specifies whether to make a single `GetParameters` AWS API call when the source is constructed. Only applicable when `only_these_keys` is supplied. If `only_these_keys` is `None`, this argument is ignored. This is an optimisation which means that everything supplied in `only_these_keys` can be loaded in a single API call, thus speeding up configuration loading. 
 
 ## Contributing
 Ideas for new features and pull requests are welcome. PRs must come with tests included. This was developed using Python 3.7 but Travis tests run with v3.6 too.
